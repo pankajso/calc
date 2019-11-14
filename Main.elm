@@ -1,6 +1,7 @@
 module Main exposing (..)
 
 import Browser
+import Browser.Events exposing (onClick)
 import Browser.Navigation as Nav
 import Html exposing (Html)
 import Html.Attributes as HA
@@ -49,6 +50,8 @@ type Msg
     = NoOp
     | Number Float
     | Op Operation
+    | Result
+    | Clear
 
 
 update : Msg -> Model -> Model
@@ -67,7 +70,16 @@ update message model =
                 --     { model | io = String.fromFloat (Maybe.withDefault 0 (String.toFloat model.io) + num) }
                 newModel =
                     { model
-                        | io = model.io ++ String.fromFloat num
+                        | io =
+                            -- if model.prev == "0" || model.io /= "0" then
+                            if model.io == "0" then
+                                String.fromFloat num
+
+                            else
+                                model.io ++ String.fromFloat num
+
+                        -- else
+                        -- String.fromFloat num
                     }
             in
             newModel
@@ -78,7 +90,39 @@ update message model =
                     { model
                         | operation = operation
                         , prev = model.io
+                        , io = "0"
                     }
+            in
+            newModel
+
+        Result ->
+            let
+                newModel =
+                    { model
+                        | io =
+                            case model.operation of
+                                Mult ->
+                                    String.fromFloat (Maybe.withDefault 0 (String.toFloat model.prev) * Maybe.withDefault 0 (String.toFloat model.io))
+
+                                Add ->
+                                    String.fromFloat (Maybe.withDefault 0 (String.toFloat model.prev) + Maybe.withDefault 0 (String.toFloat model.io))
+
+                                Div ->
+                                    String.fromFloat (Maybe.withDefault 0 (String.toFloat model.prev) / Maybe.withDefault 0 (String.toFloat model.io))
+
+                                Subst ->
+                                    String.fromFloat (Maybe.withDefault 0 (String.toFloat model.prev) - Maybe.withDefault 0 (String.toFloat model.io))
+
+                                None ->
+                                    model.io
+                    }
+            in
+            newModel
+
+        Clear ->
+            let
+                newModel =
+                    { model | io = "0", operation = None, prev = "0" }
             in
             newModel
 
@@ -94,7 +138,7 @@ view model =
         [ Html.div []
             [ Html.div [] [ Html.text model.io ]
             , Html.div []
-                [ Html.button [] [ Html.text "C" ]
+                [ Html.button [ onClick Clear ] [ Html.text "C" ]
                 , Html.button [] [ Html.text "-" ]
                 , Html.button [] [ Html.text "%" ]
                 , Html.button [ onClick (Op Div) ] [ Html.text "/" ]
@@ -120,7 +164,7 @@ view model =
             , Html.div []
                 [ Html.button [ onClick (Number 0) ] [ Html.text "0" ]
                 , Html.button [] [ Html.text "." ]
-                , Html.button [] [ Html.text "=" ]
+                , Html.button [ onClick Result ] [ Html.text "=" ]
                 ]
             ]
         ]
