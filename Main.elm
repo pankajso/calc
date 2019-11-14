@@ -48,6 +48,7 @@ type Operation
 type Msg
     = NoOp
     | Number Float
+    | Op Operation
 
 
 update : Msg -> Model -> Model
@@ -71,6 +72,16 @@ update message model =
             in
             newModel
 
+        Op operation ->
+            let
+                newModel =
+                    { model
+                        | operation = operation
+                        , prev = model.io
+                    }
+            in
+            newModel
+
 
 
 ---- VIEW ----
@@ -86,25 +97,25 @@ view model =
                 [ Html.button [] [ Html.text "C" ]
                 , Html.button [] [ Html.text "-" ]
                 , Html.button [] [ Html.text "%" ]
-                , Html.button [] [ Html.text "/" ]
+                , Html.button [ onClick (Op Div) ] [ Html.text "/" ]
                 ]
             , Html.div []
                 [ Html.button [ onClick (Number 7) ] [ Html.text "7" ]
                 , Html.button [ onClick (Number 8) ] [ Html.text "8" ]
                 , Html.button [ onClick (Number 9) ] [ Html.text "9" ]
-                , Html.button [] [ Html.text "X" ]
+                , Html.button [ onClick (Op Mult) ] [ Html.text "X" ]
                 ]
             , Html.div []
                 [ Html.button [ onClick (Number 4) ] [ Html.text "4" ]
                 , Html.button [ onClick (Number 5) ] [ Html.text "5" ]
                 , Html.button [ onClick (Number 6) ] [ Html.text "6" ]
-                , Html.button [] [ Html.text "-" ]
+                , Html.button [ onClick (Op Subst) ] [ Html.text "-" ]
                 ]
             , Html.div []
                 [ Html.button [ onClick (Number 1) ] [ Html.text "1" ]
                 , Html.button [ onClick (Number 2) ] [ Html.text "2" ]
                 , Html.button [ onClick (Number 3) ] [ Html.text "3" ]
-                , Html.button [] [ Html.text "+" ]
+                , Html.button [ onClick (Op Add) ] [ Html.text "+" ]
                 ]
             , Html.div []
                 [ Html.button [ onClick (Number 0) ] [ Html.text "0" ]
