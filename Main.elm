@@ -17,7 +17,7 @@ import Url.Parser.Query as Query
 
 type alias Model =
     { io : String
-    , prev : String
+    , prev : Float
     , operation : Operation
     }
 
@@ -25,7 +25,7 @@ type alias Model =
 init : Model
 init =
     { io = "0"
-    , prev = "0"
+    , prev = 0
     , operation = None
     }
 
@@ -52,6 +52,7 @@ type Msg
     | Op Operation
     | Result
     | Clear
+    | Dot
 
 
 update : Msg -> Model -> Model
@@ -89,7 +90,7 @@ update message model =
                 newModel =
                     { model
                         | operation = operation
-                        , prev = model.io
+                        , prev = Maybe.withDefault 0 (String.toFloat model.io)
                         , io = "0"
                     }
             in
@@ -102,16 +103,16 @@ update message model =
                         | io =
                             case model.operation of
                                 Mult ->
-                                    String.fromFloat (Maybe.withDefault 0 (String.toFloat model.prev) * Maybe.withDefault 0 (String.toFloat model.io))
+                                    String.fromFloat (Maybe.withDefault 0 (String.toFloat model.io) * model.prev)
 
                                 Add ->
-                                    String.fromFloat (Maybe.withDefault 0 (String.toFloat model.prev) + Maybe.withDefault 0 (String.toFloat model.io))
+                                    String.fromFloat (Maybe.withDefault 0 (String.toFloat model.io) + model.prev)
 
                                 Div ->
-                                    String.fromFloat (Maybe.withDefault 0 (String.toFloat model.prev) / Maybe.withDefault 0 (String.toFloat model.io))
+                                    String.fromFloat (model.prev / Maybe.withDefault 0 (String.toFloat model.io))
 
                                 Subst ->
-                                    String.fromFloat (Maybe.withDefault 0 (String.toFloat model.prev) - Maybe.withDefault 0 (String.toFloat model.io))
+                                    String.fromFloat (model.prev - Maybe.withDefault 0 (String.toFloat model.io))
 
                                 None ->
                                     model.io
@@ -122,7 +123,24 @@ update message model =
         Clear ->
             let
                 newModel =
-                    { model | io = "0", operation = None, prev = "0" }
+                    { model | io = "0", operation = None, prev = 0 }
+            in
+            newModel
+
+        Dot ->
+            let
+                newModel =
+                    { model
+                        | io =
+                            if model.io == "0" then
+                                "0."
+
+                            else if String.contains "." model.io then
+                                model.io
+
+                            else
+                                model.io ++ "."
+                    }
             in
             newModel
 
@@ -163,7 +181,7 @@ view model =
                 ]
             , Html.div []
                 [ Html.button [ onClick (Number 0) ] [ Html.text "0" ]
-                , Html.button [] [ Html.text "." ]
+                , Html.button [ onClick Dot ] [ Html.text "." ]
                 , Html.button [ onClick Result ] [ Html.text "=" ]
                 ]
             ]
