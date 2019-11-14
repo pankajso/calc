@@ -4,6 +4,7 @@ import Browser
 import Browser.Navigation as Nav
 import Html exposing (Html)
 import Html.Attributes as HA
+import Html.Events exposing (onClick)
 import Url
 import Url.Parser as Parser exposing ((</>), (<?>), Parser, custom, fragment, map, oneOf, s, top)
 import Url.Parser.Query as Query
@@ -46,6 +47,7 @@ type Operation
 
 type Msg
     = NoOp
+    | Number Float
 
 
 update : Msg -> Model -> Model
@@ -58,6 +60,17 @@ update message model =
         NoOp ->
             model
 
+        Number num ->
+            let
+                -- newModel =
+                --     { model | io = String.fromFloat (Maybe.withDefault 0 (String.toFloat model.io) + num) }
+                newModel =
+                    { model
+                        | io = model.io ++ String.fromFloat num
+                    }
+            in
+            newModel
+
 
 
 ---- VIEW ----
@@ -68,7 +81,7 @@ view : Model -> Html Msg
 view model =
     Html.div []
         [ Html.div []
-            [ Html.div [] [ Html.text "0" ]
+            [ Html.div [] [ Html.text model.io ]
             , Html.div []
                 [ Html.button [] [ Html.text "C" ]
                 , Html.button [] [ Html.text "-" ]
@@ -76,25 +89,25 @@ view model =
                 , Html.button [] [ Html.text "/" ]
                 ]
             , Html.div []
-                [ Html.button [] [ Html.text "7" ]
-                , Html.button [] [ Html.text "8" ]
-                , Html.button [] [ Html.text "9" ]
+                [ Html.button [ onClick (Number 7) ] [ Html.text "7" ]
+                , Html.button [ onClick (Number 8) ] [ Html.text "8" ]
+                , Html.button [ onClick (Number 9) ] [ Html.text "9" ]
                 , Html.button [] [ Html.text "X" ]
                 ]
             , Html.div []
-                [ Html.button [] [ Html.text "4" ]
-                , Html.button [] [ Html.text "5" ]
-                , Html.button [] [ Html.text "6" ]
+                [ Html.button [ onClick (Number 4) ] [ Html.text "4" ]
+                , Html.button [ onClick (Number 5) ] [ Html.text "5" ]
+                , Html.button [ onClick (Number 6) ] [ Html.text "6" ]
                 , Html.button [] [ Html.text "-" ]
                 ]
             , Html.div []
-                [ Html.button [] [ Html.text "1" ]
-                , Html.button [] [ Html.text "2" ]
-                , Html.button [] [ Html.text "3" ]
+                [ Html.button [ onClick (Number 1) ] [ Html.text "1" ]
+                , Html.button [ onClick (Number 2) ] [ Html.text "2" ]
+                , Html.button [ onClick (Number 3) ] [ Html.text "3" ]
                 , Html.button [] [ Html.text "+" ]
                 ]
             , Html.div []
-                [ Html.button [] [ Html.text "0" ]
+                [ Html.button [ onClick (Number 0) ] [ Html.text "0" ]
                 , Html.button [] [ Html.text "." ]
                 , Html.button [] [ Html.text "=" ]
                 ]
