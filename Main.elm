@@ -1,11 +1,13 @@
 module Main exposing (..)
 
 import Browser
-import Browser.Events exposing (onClick)
+import Browser.Events exposing (onClick, onKeyDown)
 import Browser.Navigation as Nav
 import Html exposing (Html)
 import Html.Attributes as HA
-import Html.Events exposing (onClick)
+import Html.Events exposing (keyCode, on, onClick, onInput)
+import Json.Decode as Json
+import Keyboard.Event exposing (KeyboardEvent, decodeKeyboardEvent)
 import Url
 import Url.Parser as Parser exposing ((</>), (<?>), Parser, custom, fragment, map, oneOf, s, top)
 import Url.Parser.Query as Query
@@ -22,15 +24,33 @@ type alias Model =
     }
 
 
-init : Model
+init : ( Model, Cmd Msg )
 init =
-    { io = "0"
-    , prev = 0
-    , operation = None
-    }
+    ( { io = "0"
+      , prev = 0
+      , operation = None
+      }
+    , Cmd.none
+    )
 
 
 
+-- type Key
+--     = Character Char
+--     | Control String
+-- keyDecoder : Json.Decoder Key
+-- keyDecoder =
+--     Json.map toKey (Json.field "key" Json.string)
+--
+--
+-- toKey : String -> Key
+-- toKey string =
+--     case String.uncons string of
+--         Just ( char, "" ) ->
+--             Character char
+--
+--         _ ->
+--             Control string
 -- % + - *
 
 
@@ -53,17 +73,23 @@ type Msg
     | Result
     | Clear
     | Dot
+    | HandleKeyboardEvent KeyboardEvent
 
 
-update : Msg -> Model -> Model
+
+-- | UpdateCurrentItem String
+-- | AddItem
+
+
+update : Msg -> Model -> ( Model, Cmd Msg )
 update message model =
     let
         noChange =
-            model
+            ( model, Cmd.none )
     in
     case message of
         NoOp ->
-            model
+            ( model, Cmd.none )
 
         Number num ->
             let
@@ -83,7 +109,7 @@ update message model =
                         -- String.fromFloat num
                     }
             in
-            newModel
+            ( newModel, Cmd.none )
 
         Op operation ->
             let
@@ -94,7 +120,7 @@ update message model =
                         , io = "0"
                     }
             in
-            newModel
+            ( newModel, Cmd.none )
 
         Result ->
             let
@@ -118,14 +144,14 @@ update message model =
                                     model.io
                     }
             in
-            newModel
+            ( newModel, Cmd.none )
 
         Clear ->
             let
                 newModel =
                     { model | io = "0", operation = None, prev = 0 }
             in
-            newModel
+            ( newModel, Cmd.none )
 
         Dot ->
             let
@@ -142,7 +168,66 @@ update message model =
                                 model.io ++ "."
                     }
             in
-            newModel
+            ( newModel, Cmd.none )
+
+        -- HandleKeyboardEvent event ->
+        --     ( { model | lastEvent = Just event }
+        --     , Cmd.none
+        --     )
+        HandleKeyboardEvent event ->
+            let
+                newModel =
+                    { model
+                        | io =
+                            if (Maybe.withDefault 0 (String.toFloat (Maybe.withDefault "" event.key)) <= 9) && (Maybe.withDefault 0 (String.toFloat (Maybe.withDefault "" event.key)) >= 0) then
+                                model.io ++ Maybe.withDefault "" event.key
+
+                            else
+                                model.io
+
+                        -- case event.key of
+                        --     Just "0" ->
+                        --         model.io ++ "0"
+                        --
+                        --     Just "1" ->
+                        --         model.io ++ "1"
+                        --
+                        --     Nothing ->
+                        --         model.io
+                        --
+                        --     Just _ ->
+                        --         model.io
+                    }
+            in
+            Debug.log (Debug.toString event)
+                ( newModel
+                , Cmd.none
+                )
+
+
+
+-- UpdateCurrentItem _ ->
+--     Debug.todo "handle UpdateCurrentItem _"
+--
+-- AddItem ->
+--     Debug.todo "handle AddItem"
+-- onEnter : msg -> Html.Attribute msg
+-- onEnter msg =
+--     let
+--         isEnterKey keyCode =
+--             if keyCode >= 48 && keyCode <= 57 then
+--                 Json.succeed msg
+--
+--             else
+--                 Json.fail "silent failure :)"
+--     in
+--     on "keyup" <|
+--         Json.andThen isEnterKey Html.Events.keyCode
+
+
+subscriptions : Model -> Sub Msg
+subscriptions model =
+    onKeyDown (Json.map HandleKeyboardEvent decodeKeyboardEvent)
 
 
 
@@ -193,9 +278,22 @@ view model =
 -- main : Program () Model Msg
 
 
+main : Program () Model Msg
 main =
-    Browser.sandbox
-        { view = view
-        , init = init
+    Browser.element
+        { init = always init
         , update = update
+        , subscriptions = subscriptions
+        , view = view
         }
+
+
+
+--
+-- main =
+--     Browser.sandbox
+--         { view = view
+--         , init = init
+--         , subscriptions = subscriptions
+--         , update = update
+--         }
