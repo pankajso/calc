@@ -81,6 +81,45 @@ type Msg
 -- | AddItem
 
 
+add : number -> number -> number
+add x y =
+    calc (-) x y
+
+
+calc : (a -> b -> c) -> a -> b -> c
+calc f x y =
+    f x y
+
+
+operate : Operation -> Float -> Float -> Float
+operate operation x y =
+    case operation of
+        Mult ->
+            (*) x y
+
+        Div ->
+            (/) x y
+
+        Add ->
+            (/) x y
+
+        Subst ->
+            (-) x y
+
+        None ->
+            x
+
+
+stringToFloat : String -> Float
+stringToFloat x =
+    Maybe.withDefault 0 (String.toFloat x)
+
+
+floatToString : Float -> String
+floatToString d =
+    String.fromFloat d
+
+
 update : Msg -> Model -> ( Model, Cmd Msg )
 update message model =
     let
@@ -127,21 +166,7 @@ update message model =
                 newModel =
                     { model
                         | io =
-                            case model.operation of
-                                Mult ->
-                                    String.fromFloat (Maybe.withDefault 0 (String.toFloat model.io) * model.prev)
-
-                                Add ->
-                                    String.fromFloat (Maybe.withDefault 0 (String.toFloat model.io) + model.prev)
-
-                                Div ->
-                                    String.fromFloat (model.prev / Maybe.withDefault 0 (String.toFloat model.io))
-
-                                Subst ->
-                                    String.fromFloat (model.prev - Maybe.withDefault 0 (String.toFloat model.io))
-
-                                None ->
-                                    model.io
+                            floatToString (operate model.operation model.prev (stringToFloat model.io))
                     }
             in
             ( newModel, Cmd.none )
@@ -232,7 +257,6 @@ subscriptions model =
 
 
 ---- VIEW ----
--- button [onClick msg, style btnStyle] [text string]
 
 
 view : Model -> Html Msg
@@ -247,25 +271,25 @@ view model =
                 , Html.button [ onClick (Op Div) ] [ Html.text "/" ]
                 ]
             , Html.div []
-                [ Html.button [ onClick (Number 7) ] [ Html.text "7" ]
-                , Html.button [ onClick (Number 8) ] [ Html.text "8" ]
-                , Html.button [ onClick (Number 9) ] [ Html.text "9" ]
+                [ numBtn 7
+                , numBtn 8
+                , numBtn 9
                 , Html.button [ onClick (Op Mult) ] [ Html.text "X" ]
                 ]
             , Html.div []
-                [ Html.button [ onClick (Number 4) ] [ Html.text "4" ]
-                , Html.button [ onClick (Number 5) ] [ Html.text "5" ]
-                , Html.button [ onClick (Number 6) ] [ Html.text "6" ]
+                [ numBtn 4
+                , numBtn 5
+                , numBtn 6
                 , Html.button [ onClick (Op Subst) ] [ Html.text "-" ]
                 ]
             , Html.div []
-                [ Html.button [ onClick (Number 1) ] [ Html.text "1" ]
-                , Html.button [ onClick (Number 2) ] [ Html.text "2" ]
-                , Html.button [ onClick (Number 3) ] [ Html.text "3" ]
+                [ numBtn 1
+                , numBtn 2
+                , numBtn 3
                 , Html.button [ onClick (Op Add) ] [ Html.text "+" ]
                 ]
             , Html.div []
-                [ Html.button [ onClick (Number 0) ] [ Html.text "0" ]
+                [ numBtn 0
                 , Html.button [ onClick Dot ] [ Html.text "." ]
                 , Html.button [ onClick Result ] [ Html.text "=" ]
                 ]
@@ -273,9 +297,18 @@ view model =
         ]
 
 
+numBtn : Float -> Html Msg
+numBtn n =
+    Html.button [ numClick n ] [ n |> String.fromFloat |> Html.text ]
+
+
+numClick : Float -> Html.Attribute Msg
+numClick n =
+    onClick (Number n)
+
+
 
 ---- PROGRAM ----
--- main : Program () Model Msg
 
 
 main : Program () Model Msg
@@ -286,14 +319,3 @@ main =
         , subscriptions = subscriptions
         , view = view
         }
-
-
-
---
--- main =
---     Browser.sandbox
---         { view = view
---         , init = init
---         , subscriptions = subscriptions
---         , update = update
---         }
