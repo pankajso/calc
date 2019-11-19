@@ -91,9 +91,13 @@ calc f x y =
     f x y
 
 
-operate : Operation -> Float -> Float -> Float
-operate operation x y =
-    case operation of
+operate : Operation -> Float -> String -> String
+operate operation x y_ =
+    let
+        y =
+            stringToFloat y_
+    in
+    (case operation of
         Mult ->
             (*) x y
 
@@ -108,11 +112,26 @@ operate operation x y =
 
         None ->
             x
+    )
+        |> String.fromFloat
 
 
 stringToFloat : String -> Float
 stringToFloat x =
-    Maybe.withDefault 0 (String.toFloat x)
+    -- Maybe.withDefault 0 (String.toFloat x)
+    -- String.toFloat x
+    --     |> Maybe.withDefault 0
+    --     |> (*) 10
+    --     |> (+) 1
+    --     |> (/) 20
+    --     |> negate
+    String.toFloat x
+        |> (\i -> Maybe.withDefault 0 i)
+        |> (*) 10
+
+
+wd i =
+    Maybe.withDefault 0 i
 
 
 floatToString : Float -> String
@@ -166,7 +185,7 @@ update message model =
                 newModel =
                     { model
                         | io =
-                            floatToString (operate model.operation model.prev (stringToFloat model.io))
+                            operate model.operation model.prev model.io
                     }
             in
             ( newModel, Cmd.none )
@@ -204,11 +223,27 @@ update message model =
                 newModel =
                     { model
                         | io =
-                            if (Maybe.withDefault 0 (String.toFloat (Maybe.withDefault "" event.key)) <= 9) && (Maybe.withDefault 0 (String.toFloat (Maybe.withDefault "" event.key)) >= 0) then
-                                model.io ++ Maybe.withDefault "" event.key
+                            -- if
+                            --     (Maybe.withDefault 0
+                            --         (String.toFloat (Maybe.withDefault "" event.key))
+                            --         <= 9
+                            --     )
+                            --         && (Maybe.withDefault 0 (String.toFloat (Maybe.withDefault "" event.key)) >= 0)
+                            -- then
+                            --     model.io ++ Maybe.withDefault "" event.key
+                            --
+                            -- else
+                            --     model.io
+                            case event.key of
+                                Just a ->
+                                    if (stringToFloat a <= 9) && (stringToFloat a >= 0) then
+                                        model.io ++ a
 
-                            else
-                                model.io
+                                    else
+                                        model.io
+
+                                Nothing ->
+                                    model.io
 
                         -- case event.key of
                         --     Just "0" ->
