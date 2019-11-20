@@ -8,6 +8,7 @@ import Html.Attributes as HA
 import Html.Events exposing (keyCode, on, onClick, onInput)
 import Json.Decode as Json
 import Keyboard.Event exposing (KeyboardEvent, decodeKeyboardEvent)
+import Maybe exposing (withDefault)
 import Url
 import Url.Parser as Parser exposing ((</>), (<?>), Parser, custom, fragment, map, oneOf, s, top)
 import Url.Parser.Query as Query
@@ -91,11 +92,14 @@ calc f x y =
     f x y
 
 
-operate : Operation -> Float -> String -> String
+operate : Operation -> Float -> Float -> String
 operate operation x y_ =
     let
         y =
-            stringToFloat y_
+            y_
+
+        -- String.toFloat y_
+        --     |>
     in
     (case operation of
         Mult ->
@@ -105,7 +109,7 @@ operate operation x y_ =
             (/) x y
 
         Add ->
-            (/) x y
+            (+) x y
 
         Subst ->
             (-) x y
@@ -116,7 +120,7 @@ operate operation x y_ =
         |> String.fromFloat
 
 
-stringToFloat : String -> Float
+stringToFloat : String -> Maybe Float
 stringToFloat x =
     -- Maybe.withDefault 0 (String.toFloat x)
     -- String.toFloat x
@@ -126,8 +130,11 @@ stringToFloat x =
     --     |> (/) 20
     --     |> negate
     String.toFloat x
-        |> (\i -> Maybe.withDefault 0 i)
-        |> (*) 10
+
+
+
+-- |> (\i -> Maybe.withDefault 0 i)
+-- |> (*) 10
 
 
 wd i =
@@ -185,7 +192,16 @@ update message model =
                 newModel =
                     { model
                         | io =
-                            operate model.operation model.prev model.io
+                            let
+                                stf =
+                                    String.toFloat model.io
+                            in
+                            case String.toFloat model.io of
+                                Just x ->
+                                    operate model.operation model.prev (stf |> withDefault 0)
+
+                                Nothing ->
+                                    model.io
                     }
             in
             ( newModel, Cmd.none )
@@ -236,11 +252,16 @@ update message model =
                             --     model.io
                             case event.key of
                                 Just a ->
-                                    if (stringToFloat a <= 9) && (stringToFloat a >= 0) then
-                                        model.io ++ a
+                                    case String.toFloat a of
+                                        Nothing ->
+                                            model.io
 
-                                    else
-                                        model.io
+                                        Just x ->
+                                            if model.io == "0" then
+                                                a
+
+                                            else
+                                                model.io ++ a
 
                                 Nothing ->
                                     model.io
