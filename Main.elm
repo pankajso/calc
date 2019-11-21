@@ -144,26 +144,48 @@ floatToString d =
     String.fromFloat d
 
 
-keyoperation : Maybe.Maybe String -> Operation
+keyoperation : Maybe.Maybe String -> ( Operation, Bool )
 keyoperation key =
     case key of
         Just "+" ->
-            Add
+            ( Add, True )
 
         Just "-" ->
-            Subst
+            ( Subst, True )
 
         Just "/" ->
-            Div
+            ( Div, True )
 
         Just "*" ->
-            Mult
+            ( Mult, True )
 
         Just _ ->
-            None
+            ( None, False )
 
         Nothing ->
-            None
+            ( None, False )
+
+
+keyResultEnter : Maybe.Maybe String -> ( Msg, Bool )
+keyResultEnter key =
+    case key of
+        Just "Escape" ->
+            ( Clear, True )
+
+        Just "Enter" ->
+            ( Result, True )
+
+        Just "=" ->
+            ( Result, True )
+
+        Just "." ->
+            ( Dot, True )
+
+        Just _ ->
+            ( NoOp, False )
+
+        Nothing ->
+            ( NoOp, False )
 
 
 getModelio : String -> String -> String
@@ -234,21 +256,30 @@ update message model =
             in
             ( newModel, Cmd.none )
 
-        -- HandleKeyboardEvent event ->
-        --     ( { model | lastEvent = Just event }
-        --     , Cmd.none
-        --     )
         HandleKeyboardEvent event ->
             let
+                ( newOp, isOp ) =
+                    keyoperation event.key
+
+                ( msg, isResult ) =
+                    keyResultEnter event.key
+
+                _ =
+                    Debug.log (Debug.toString event)
+
                 newModel =
                     { model
                         | io =
                             ifNumber event model
-                        , operation =
-                            keyoperation event.key
                     }
             in
-            Debug.log (Debug.toString event)
+            if isOp then
+                update (Op newOp) newModel
+
+            else if isResult then
+                update msg newModel
+
+            else
                 ( newModel
                 , Cmd.none
                 )
