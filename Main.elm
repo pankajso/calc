@@ -135,15 +135,44 @@ stringToFloat x =
 
 -- |> (\i -> Maybe.withDefault 0 i)
 -- |> (*) 10
-
-
-wd i =
-    Maybe.withDefault 0 i
+-- wd i =
+--     Maybe.withDefault 0 i
 
 
 floatToString : Float -> String
 floatToString d =
     String.fromFloat d
+
+
+keyoperation : Maybe.Maybe String -> Operation
+keyoperation key =
+    case key of
+        Just "+" ->
+            Add
+
+        Just "-" ->
+            Subst
+
+        Just "/" ->
+            Div
+
+        Just "*" ->
+            Mult
+
+        Just _ ->
+            None
+
+        Nothing ->
+            None
+
+
+getModelio : String -> String -> String
+getModelio io a =
+    if io == "0" then
+        a
+
+    else
+        io ++ a
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -163,15 +192,7 @@ update message model =
                 newModel =
                     { model
                         | io =
-                            -- if model.prev == "0" || model.io /= "0" then
-                            if model.io == "0" then
-                                String.fromFloat num
-
-                            else
-                                model.io ++ String.fromFloat num
-
-                        -- else
-                        -- String.fromFloat num
+                            getModelio model.io (String.fromFloat num)
                     }
             in
             ( newModel, Cmd.none )
@@ -192,16 +213,7 @@ update message model =
                 newModel =
                     { model
                         | io =
-                            let
-                                stf =
-                                    String.toFloat model.io
-                            in
-                            case String.toFloat model.io of
-                                Just x ->
-                                    operate model.operation model.prev (stf |> withDefault 0)
-
-                                Nothing ->
-                                    model.io
+                            calcResult model.io model.operation model.prev
                     }
             in
             ( newModel, Cmd.none )
@@ -217,15 +229,7 @@ update message model =
             let
                 newModel =
                     { model
-                        | io =
-                            if model.io == "0" then
-                                "0."
-
-                            else if String.contains "." model.io then
-                                model.io
-
-                            else
-                                model.io ++ "."
+                        | io = handleDot model.io
                     }
             in
             ( newModel, Cmd.none )
@@ -239,45 +243,9 @@ update message model =
                 newModel =
                     { model
                         | io =
-                            -- if
-                            --     (Maybe.withDefault 0
-                            --         (String.toFloat (Maybe.withDefault "" event.key))
-                            --         <= 9
-                            --     )
-                            --         && (Maybe.withDefault 0 (String.toFloat (Maybe.withDefault "" event.key)) >= 0)
-                            -- then
-                            --     model.io ++ Maybe.withDefault "" event.key
-                            --
-                            -- else
-                            --     model.io
-                            case event.key of
-                                Just a ->
-                                    case String.toFloat a of
-                                        Nothing ->
-                                            model.io
-
-                                        Just x ->
-                                            if model.io == "0" then
-                                                a
-
-                                            else
-                                                model.io ++ a
-
-                                Nothing ->
-                                    model.io
-
-                        -- case event.key of
-                        --     Just "0" ->
-                        --         model.io ++ "0"
-                        --
-                        --     Just "1" ->
-                        --         model.io ++ "1"
-                        --
-                        --     Nothing ->
-                        --         model.io
-                        --
-                        --     Just _ ->
-                        --         model.io
+                            ifNumber event model
+                        , operation =
+                            keyoperation event.key
                     }
             in
             Debug.log (Debug.toString event)
@@ -286,29 +254,50 @@ update message model =
                 )
 
 
-
--- UpdateCurrentItem _ ->
---     Debug.todo "handle UpdateCurrentItem _"
---
--- AddItem ->
---     Debug.todo "handle AddItem"
--- onEnter : msg -> Html.Attribute msg
--- onEnter msg =
---     let
---         isEnterKey keyCode =
---             if keyCode >= 48 && keyCode <= 57 then
---                 Json.succeed msg
---
---             else
---                 Json.fail "silent failure :)"
---     in
---     on "keyup" <|
---         Json.andThen isEnterKey Html.Events.keyCode
-
-
 subscriptions : Model -> Sub Msg
 subscriptions model =
     onKeyDown (Json.map HandleKeyboardEvent decodeKeyboardEvent)
+
+
+calcResult : String -> Operation -> Float -> String
+calcResult io operation prev =
+    let
+        stf =
+            String.toFloat io
+    in
+    case String.toFloat io of
+        Just x ->
+            operate operation prev (stf |> withDefault 0)
+
+        Nothing ->
+            io
+
+
+handleDot : String -> String
+handleDot io =
+    if io == "0" then
+        "0."
+
+    else if String.contains "." io then
+        io
+
+    else
+        io ++ "."
+
+
+ifNumber : { a | key : Maybe.Maybe String } -> { b | io : String } -> String
+ifNumber event model =
+    case event.key of
+        Just a ->
+            case String.toFloat a of
+                Nothing ->
+                    model.io
+
+                Just x ->
+                    getModelio model.io a
+
+        Nothing ->
+            model.io
 
 
 
